@@ -2,6 +2,7 @@ package com.krekedev.refugioMascotas.services;
 
 import java.util.Optional;
 
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 
 import com.krekedev.refugioMascotas.entidades.Usuario;
@@ -17,6 +18,8 @@ public class UsuarioService {
 	}
 
 	public Usuario guardar(Usuario usuario) {
+		String hash = BCrypt.hashpw(usuario.getPassword(), BCrypt.gensalt());
+		usuario.setPassword(hash);
 		return usuarioRepository.save(usuario);
 	}
 
@@ -25,7 +28,8 @@ public class UsuarioService {
 		Optional<Usuario> usuario = usuarioRepository.findByUsername(username);
 
 		if (usuario.isPresent()) {
-			if (usuario.get().getPassword().equals(password)) {
+			boolean coincide = BCrypt.checkpw(password, usuario.get().getPassword());
+			if (coincide) {
 				return usuario;
 			} else {
 				return Optional.empty();
