@@ -5,11 +5,14 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.krekedev.refugioMascotas.entidades.Usuario;
 import com.krekedev.refugioMascotas.repositories.UsuarioRepository;
 import com.krekedev.refugioMascotas.services.UsuarioService;
@@ -59,6 +62,42 @@ public class AuthController {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña incorrecta");
 		}
 
+	}
+
+	@GetMapping("/perfil")
+	public ResponseEntity<?> verPerfil(@RequestHeader(value = "Authorization", required = false) String autHeader) {
+
+		if (autHeader == null || !autHeader.startsWith("Bearer ")) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+					.body("Acceso Denegado: Debes proveer un token valido en la cabezera Authorization ");
+		}
+		String token = autHeader.substring(7);
+
+		DecodedJWT datosToken = JwtUtil.validarToken(token);
+
+		if (datosToken == null) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Acceso Denegado:Token Invalido o Expirado ");
+		}
+
+		String usuario = datosToken.getSubject();
+		String rol = datosToken.getClaim("rol").asString();
+
+		if (rol.equals("ADMIN")) {
+			return ResponseEntity.ok(Map.of(
+
+					"Mensaje",
+					"Bienvenido, voluntario del refugio. Puedes registrar rescates, actualizar fichas de salud y autorizar solicitudes de adopción.",
+					"Usuario", usuario, "Rol", rol, "Estatus", "Autenticacion Exitosa"));
+		} else if (rol.equals("USER")) {
+			return ResponseEntity.ok(Map.of(
+
+					"Mensaje",
+					"Bienvenido, adoptante. Puedes ver las mascotas disponibles, postularte para adoptar y actualizar tus datos de contacto.",
+					"Usuario", usuario, "Rol", rol, "Estatus", "Autenticacion Exitosa"));
+		} else {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Su rol no esta disponible por el momento");
+
+		}
 	}
 
 }
