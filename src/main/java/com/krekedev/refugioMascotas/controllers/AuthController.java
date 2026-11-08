@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.krekedev.refugioMascotas.entidades.Usuario;
 import com.krekedev.refugioMascotas.repositories.UsuarioRepository;
 import com.krekedev.refugioMascotas.services.UsuarioService;
+import com.krekedev.refugioMascotas.utils.JwtUtil;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -49,7 +50,10 @@ public class AuthController {
 		Optional<Usuario> aunteticado = usuarioServicio.autenticar(username, password);
 
 		if (aunteticado.isPresent()) {
-			return ResponseEntity.ok(Map.of("Usuario Ingresado", aunteticado.get()));
+			String token = JwtUtil.generarToken(aunteticado.get().getUsername(), aunteticado.get().getRol());
+
+			return ResponseEntity
+					.ok(Map.of("Usuario Ingresado: ", aunteticado.get().getUsername(), "Token Generado: ", token));
 
 		} else {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña incorrecta");
